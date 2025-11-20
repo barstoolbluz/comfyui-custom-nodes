@@ -15,8 +15,33 @@ version = 1
 ##  $ flox show gum     <- show all versions of a package
 ## -------------------------------------------------------------------
 [install]
+"barstoolbluz/comfyui-cuda".pkg-path = "barstoolbluz/comfyui-cuda"
+"barstoolbluz/comfyui-cuda".systems = ["x86_64-linux"]
+"barstoolbluz/comfyui-cuda".pkg-group = "barstoolbluz/comfyui-cuda"
+"barstoolbluz/torchaudio-python313-cuda12_8-sm120-avx512".pkg-path = "barstoolbluz/torchaudio-python313-cuda12_8-sm120-avx512"
+"barstoolbluz/torchaudio-python313-cuda12_8-sm120-avx512".systems = ["x86_64-linux"]
+"barstoolbluz/torchaudio-python313-cuda12_8-sm120-avx512".pkg-group = "barstoolbluz/torchaudio-python313-cuda12_8-sm120-avx512"
+"barstoolbluz/pytorch-python313-cuda12_8-sm120-avx512".pkg-path = "barstoolbluz/pytorch-python313-cuda12_8-sm120-avx512"
+"barstoolbluz/pytorch-python313-cuda12_8-sm120-avx512".systems = ["x86_64-linux"]
+"barstoolbluz/pytorch-python313-cuda12_8-sm120-avx512".pkg-group = "barstoolbluz/pytorch-python313-cuda12_8-sm120-avx512"
+"barstoolbluz/torchvision-python313-cuda12_8-sm120-avx512".pkg-path = "barstoolbluz/torchvision-python313-cuda12_8-sm120-avx512"
+"barstoolbluz/torchvision-python313-cuda12_8-sm120-avx512".systems = ["x86_64-linux"]
+"barstoolbluz/torchvision-python313-cuda12_8-sm120-avx512".pkg-group = "barstoolbluz/torchvision-python313-cuda12_8-sm120-avx512"
+opencv4.pkg-path = "python313Packages.opencv4"
+matplotlib.pkg-path = "python313Packages.matplotlib"
+mss.pkg-path = "python313Packages.mss"
+piexif.pkg-path = "python313Packages.piexif"
+numba.pkg-path = "python313Packages.numba"
+scikit-image.pkg-path = "python313Packages.scikit-image"
+scikit-learn.pkg-path = "python313Packages.scikit-learn"
+imageio.pkg-path = "python313Packages.imageio"
+joblib.pkg-path = "python313Packages.joblib"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
+
+# Local Nix-built packages
+comfyui-tools.pkg-path = "comfyui-tools"
+comfyui-custom-nodes.pkg-path = "comfyui-custom-nodes"
 
 
 ## Environment Variables ---------------------------------------------
@@ -24,21 +49,55 @@ version = 1
 ##      as well as [hook], [profile] scripts and [services] below.
 ## -------------------------------------------------------------------
 [vars]
-# INTRO_MESSAGE = "It's gettin' Flox in here"
+# ComfyUI directories
+COMFYUI_WORK_DIR = "$HOME/comfyui-work"
+COMFYUI_USER_DIR = "$HOME/comfyui-work"
+COMFYUI_OUTPUT_DIR = "$HOME/comfyui-work/output"
+COMFYUI_INPUT_DIR = "$HOME/comfyui-work/input"
+COMFYUI_TEMP_DIR = "$HOME/comfyui-work/temp"
+COMFYUI_MODELS_DIR = "$HOME/comfyui-work/models"
+
+# ComfyUI database (stored in environment cache)
+COMFYUI_DATABASE_URL = "sqlite:///${FLOX_ENV_CACHE:-$HOME/.flox/cache}/comfyui.db"
+
+# ComfyUI network settings
+COMFYUI_HOST = "0.0.0.0"
+COMFYUI_PORT = "8188"
 
 
 ## Activation Hook ---------------------------------------------------
 ##  ... run by _bash_ shell when you run 'flox activate'.
 ## -------------------------------------------------------------------
 [hook]
-# on-activate = '''
-#   # -> Set variables, create files and directories
-#   # -> Perform initialization steps, e.g. create a python venv
-#   # -> Useful environment variables:
-#   #      - FLOX_ENV_PROJECT=/home/user/example
-#   #      - FLOX_ENV=/home/user/example/.flox/run
-#   #      - FLOX_ENV_CACHE=/home/user/example/.flox/cache
-# '''
+on-activate = '''
+  # Create ComfyUI working directories
+  mkdir -p "$COMFYUI_WORK_DIR"/{models,output,input,temp,custom_nodes}
+
+  # Create log directory for service
+  mkdir -p "$FLOX_ENV_CACHE/logs"
+
+  # Setup custom nodes on first activation
+  SETUP_MARKER="$FLOX_ENV_CACHE/.custom_nodes_setup_complete"
+  if [ ! -f "$SETUP_MARKER" ]; then
+    echo "🔧 First-time setup: Installing custom nodes..."
+    # Try package location first, then fall back to project directory
+    if [ -f "$FLOX_ENV/share/comfyui-custom-nodes/setup-custom-nodes.sh" ]; then
+      bash "$FLOX_ENV/share/comfyui-custom-nodes/setup-custom-nodes.sh"
+      touch "$SETUP_MARKER"
+      echo "✅ Custom nodes setup complete!"
+    elif [ -f "$FLOX_ENV_PROJECT/setup-custom-nodes.sh" ]; then
+      bash "$FLOX_ENV_PROJECT/setup-custom-nodes.sh"
+      touch "$SETUP_MARKER"
+      echo "✅ Custom nodes setup complete!"
+    else
+      echo "⚠️  setup-custom-nodes.sh not found, skipping custom nodes installation"
+    fi
+  fi
+
+  echo "✅ ComfyUI directories ready at: $COMFYUI_WORK_DIR"
+  echo "   Use 'flox services start comfyui' to start the server"
+  echo "   Or 'flox activate --start-services' to auto-start"
+'''
 
 
 ## Profile script ----------------------------------------------------
@@ -63,7 +122,23 @@ version = 1
 ##  $ flox activate --start-services  <- Activates & starts all
 ## ------------------------------------------------------------------
 [services]
-# myservice.command = "python3 -m http.server"
+[services.comfyui]
+command = '''
+  exec comfyui-cuda \
+    --user-directory "$COMFYUI_USER_DIR" \
+    --output-directory "$COMFYUI_OUTPUT_DIR" \
+    --temp-directory "$COMFYUI_TEMP_DIR" \
+    --input-directory "$COMFYUI_INPUT_DIR" \
+    --extra-model-paths-config /home/daedalus/comfyui-work/extra_model_paths.yaml \
+    --database-url "$COMFYUI_DATABASE_URL" \
+    --listen "$COMFYUI_HOST" \
+    --port "$COMFYUI_PORT" \
+    2>&1 | tee -a "$FLOX_ENV_CACHE/logs/comfyui.log"
+'''
+is-daemon = true
+
+[services.comfyui.shutdown]
+command = "kill $FLOX_PROCESS_PID"
 
 
 ## Include ----------------------------------------------------------
@@ -78,16 +153,11 @@ version = 1
 ## Build and publish your own packages ------------------------------
 ##  $ flox build
 ##  $ flox publish
+##
+##  Build definitions have been moved to Nix expressions in .flox/pkgs/
+##  - comfyui-tools.nix
+##  - comfyui-custom-nodes.nix
 ## ------------------------------------------------------------------
-[build]
-# [build.myproject]
-# description = "The coolest project ever"
-# version = "0.0.1"
-# command = """
-#   mkdir -p $out/bin
-#   cargo build --release
-#   cp target/release/myproject $out/bin/myproject
-# """
 
 
 ## Other Environment Options -----------------------------------------

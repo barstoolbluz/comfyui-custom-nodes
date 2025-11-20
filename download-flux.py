@@ -11,6 +11,7 @@ from huggingface_hub import hf_hub_download
 # Configuration
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 MODEL_ID = "black-forest-labs/FLUX.1-dev"
+TEXT_ENCODER_REPO = "comfyanonymous/flux_text_encoders"
 MODELS_DIR = Path.home() / "comfyui-work" / "models"
 
 # Create model directories
@@ -29,26 +30,26 @@ print(f"Model: {MODEL_ID}")
 print(f"Target: {MODELS_DIR}")
 print()
 
-# Files to download - (remote_filename, target_dir, local_filename)
+# Files to download - (repo_id, remote_filename, target_dir, local_filename)
 files_to_download = [
-    ("flux1-dev.safetensors", unet_dir, "flux1-dev.safetensors"),
-    ("ae.safetensors", vae_dir, "ae.safetensors"),
-    ("text_encoder/model.safetensors", clip_dir, "clip_l.safetensors"),
-    ("text_encoder_2/model.safetensors", clip_dir, "t5xxl_fp16.safetensors"),
+    (MODEL_ID, "flux1-dev.safetensors", unet_dir, "flux1-dev.safetensors"),
+    (MODEL_ID, "ae.safetensors", vae_dir, "ae.safetensors"),
+    (MODEL_ID, "text_encoder/model.safetensors", clip_dir, "clip_l.safetensors"),
+    (TEXT_ENCODER_REPO, "t5xxl_fp16.safetensors", clip_dir, "t5xxl_fp16.safetensors"),
 ]
 
 print("Will download:")
-for remote_file, target_dir, local_file in files_to_download:
+for repo_id, remote_file, target_dir, local_file in files_to_download:
     print(f"  • {remote_file} → {target_dir}/{local_file}")
 print()
 
 try:
-    for remote_file, target_dir, local_file in files_to_download:
+    for repo_id, remote_file, target_dir, local_file in files_to_download:
         print(f"📥 Downloading {remote_file}...")
 
         # Download directly to target directory
         downloaded_path = hf_hub_download(
-            repo_id=MODEL_ID,
+            repo_id=repo_id,
             filename=remote_file,
             token=HF_TOKEN if HF_TOKEN else None,
             local_dir=target_dir,
