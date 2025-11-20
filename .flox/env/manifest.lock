@@ -1,0 +1,20 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "version": 1,
+    "options": {},
+    "build": {
+      "comfyui-custom-nodes": {
+        "command": "  # Create output directories\n  mkdir -p $out/share/comfyui-custom-nodes\n  mkdir -p $out/share/doc/comfyui-custom-nodes\n\n  # Copy setup scripts\n  cp setup-custom-nodes.sh $out/share/comfyui-custom-nodes/\n  cp create-model-symlinks.sh $out/share/comfyui-custom-nodes/\n  chmod +x $out/share/comfyui-custom-nodes/*.sh\n\n  # Copy documentation\n  cp CUSTOM-NODES-README.md $out/share/doc/comfyui-custom-nodes/README.md\n  cp PUBLISHING-GUIDE.md $out/share/doc/comfyui-custom-nodes/\n\n  echo \"ComfyUI custom nodes package created successfully\"\n  echo \"Includes 12 custom node packages for FLUX workflows\"\n",
+        "version": "1.0.0",
+        "description": "Custom nodes setup for ComfyUI FLUX workflows (UmeAiRT MEGAPACK compatible)"
+      },
+      "comfyui-tools": {
+        "command": "  # Create output directories\n  mkdir -p $out/bin\n  mkdir -p $out/share/comfyui-tools\n  mkdir -p $out/share/doc/comfyui-tools\n\n  # Copy download scripts\n  cp download-sd15.py $out/share/comfyui-tools/\n  cp download-sdxl.py $out/share/comfyui-tools/\n  cp download-sd35.py $out/share/comfyui-tools/\n  cp download-flux.py $out/share/comfyui-tools/\n  cp download-sdxl-lightning.py $out/share/comfyui-tools/\n  chmod +x $out/share/comfyui-tools/*.py\n\n  # Copy and install main CLI tool\n  cp comfyui-download $out/bin/comfyui-download\n  chmod +x $out/bin/comfyui-download\n\n  # Copy documentation\n  cp README.md $out/share/doc/comfyui-tools/\n  cp SD35-GUIDE.md $out/share/doc/comfyui-tools/\n\n  # Create extra_model_paths.yaml template\n  cat > $out/share/comfyui-tools/extra_model_paths.yaml.template <<'EOF'\n# ComfyUI Extra Model Paths Configuration\ncomfyui:\n  base_path: /home/USERNAME/comfyui-work/\n  is_default: true\n  checkpoints: models/checkpoints/\n  clip: models/clip/\n  text_encoders: models/clip/\n  vae: models/vae/\n  loras: models/loras/\n  upscale_models: models/upscale_models/\n  embeddings: models/embeddings/\n  controlnet: models/controlnet/\nEOF\n\n  echo \"ComfyUI tools packaged successfully\"\n",
+        "version": "1.0.0",
+        "description": "Helper tools for ComfyUI - model downloaders and setup scripts"
+      }
+    }
+  },
+  "packages": []
+}

@@ -1,0 +1,67 @@
+version = 1
+
+[build]
+[build.comfyui-tools]
+description = "Helper tools for ComfyUI - model downloaders and setup scripts"
+version = "1.0.0"
+command = """
+  # Create output directories
+  mkdir -p $out/bin
+  mkdir -p $out/share/comfyui-tools
+  mkdir -p $out/share/doc/comfyui-tools
+
+  # Copy download scripts
+  cp download-sd15.py $out/share/comfyui-tools/
+  cp download-sdxl.py $out/share/comfyui-tools/
+  cp download-sd35.py $out/share/comfyui-tools/
+  cp download-flux.py $out/share/comfyui-tools/
+  cp download-sdxl-lightning.py $out/share/comfyui-tools/
+  chmod +x $out/share/comfyui-tools/*.py
+
+  # Copy and install main CLI tool
+  cp comfyui-download $out/bin/comfyui-download
+  chmod +x $out/bin/comfyui-download
+
+  # Copy documentation
+  cp README.md $out/share/doc/comfyui-tools/
+  cp SD35-GUIDE.md $out/share/doc/comfyui-tools/
+
+  # Create extra_model_paths.yaml template
+  cat > $out/share/comfyui-tools/extra_model_paths.yaml.template <<'EOF'
+# ComfyUI Extra Model Paths Configuration
+comfyui:
+  base_path: /home/USERNAME/comfyui-work/
+  is_default: true
+  checkpoints: models/checkpoints/
+  clip: models/clip/
+  text_encoders: models/clip/
+  vae: models/vae/
+  loras: models/loras/
+  upscale_models: models/upscale_models/
+  embeddings: models/embeddings/
+  controlnet: models/controlnet/
+EOF
+
+  echo "ComfyUI tools packaged successfully"
+"""
+
+[build.comfyui-custom-nodes]
+description = "Custom nodes setup for ComfyUI FLUX workflows (UmeAiRT MEGAPACK compatible)"
+version = "1.0.0"
+command = """
+  # Create output directories
+  mkdir -p $out/share/comfyui-custom-nodes
+  mkdir -p $out/share/doc/comfyui-custom-nodes
+
+  # Copy setup scripts
+  cp setup-custom-nodes.sh $out/share/comfyui-custom-nodes/
+  cp create-model-symlinks.sh $out/share/comfyui-custom-nodes/
+  chmod +x $out/share/comfyui-custom-nodes/*.sh
+
+  # Copy documentation
+  cp CUSTOM-NODES-README.md $out/share/doc/comfyui-custom-nodes/README.md
+  cp PUBLISHING-GUIDE.md $out/share/doc/comfyui-custom-nodes/
+
+  echo "ComfyUI custom nodes package created successfully"
+  echo "Includes 12 custom node packages for FLUX workflows"
+"""
